@@ -1,19 +1,17 @@
 {
-  "name": "voiceguard",
+  "name": "voiceguard-workspace",
+  "version": "1.0.0",
   "private": true,
-  "version": "0.1.0",
-  "type": "module",
+  "description": "VoiceGuard unified project — frontend and backend workspaces",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@vitejs/plugin-react": "latest",
-    "framer-motion": "^13.2.0",
-    "lucide-react": "^1.42.0",
-    "react": "latest",
-    "react-dom": "latest",
-    "vite": "latest"
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "npm --prefix backend run dev",
+    "build:frontend": "npm --prefix frontend run build",
+    "start:backend": "npm --prefix backend run start",
+    "install:all": "npm install"
   }
 }

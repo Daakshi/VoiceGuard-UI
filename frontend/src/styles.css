@@ -197,3 +197,34 @@ body { background: var(--paper); }
   border-color: var(--error) !important;
 }
 
+/* Live Sync & Real-time presence indicators */
+.verified-label.is-live {
+  color: #246838 !important;
+  font-weight: 700;
+}
+.verified-label i.pulse-green {
+  background: #39b54a !important;
+  box-shadow: 0 0 0 4px rgba(57, 181, 74, 0.25);
+  animation: pulse-dot 1.8s ease-in-out infinite;
+}
+.live-sync-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-family: var(--mono);
+  background: #eef7ee;
+  border: 1px solid rgba(57, 181, 74, 0.3);
+  border-radius: 20px;
+  color: #246838;
+}
+.live-sync-banner i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #39b54a;
+  animation: pulse-dot 1.8s infinite;
+}
+
+
