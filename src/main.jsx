@@ -1,4 +1,4 @@
-import { StrictMode, useEffect, useMemo, useState } from 'react';
+import { StrictMode, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { api } from './api';
 import './styles.css';
@@ -17,6 +17,155 @@ function navigateTo(path) {
 
 function DashboardLogo() {
   return <a className="dashboard-wordmark" href="/dashboard" aria-label="VoiceGuard dashboard"><span className="wordmark-mark" aria-hidden="true"><i /><i /><i /></span><span>VoiceGuard</span></a>;
+}
+
+function DashboardHeader({ activePath }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const buttonRef = useRef(null);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 768 && isOpen) setIsOpen(false);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => { document.body.style.overflow = prev; };
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === 'Escape' && isOpen) {
+        setIsOpen(false);
+        buttonRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [isOpen]);
+
+  const navLinks = [
+    { label: 'Overview', href: '/dashboard' },
+    { label: 'Analytics', href: '/analytics' },
+    { label: 'Call history', href: '/call-history' },
+    { label: 'Contacts', href: '/contacts' },
+    { label: 'Settings', href: '/settings' },
+  ];
+
+  return (
+    <>
+      <header className="dashboard-header">
+        <DashboardLogo />
+        <nav className="dashboard-nav-desktop" aria-label="Dashboard navigation">
+          {navLinks.map((link) => (
+            <a
+              key={link.href}
+              className={activePath === link.href ? 'nav-active' : ''}
+              href={link.href}
+            >
+              {link.label}
+            </a>
+          ))}
+          <a data-signout="true" href="/login">Sign out</a>
+        </nav>
+
+        <button
+          ref={buttonRef}
+          type="button"
+          className={`vg-burger-btn dashboard-burger-btn ${isOpen ? 'is-open' : ''}`}
+          onClick={() => setIsOpen((prev) => !prev)}
+          aria-label={isOpen ? 'Close navigation menu' : 'Open navigation menu'}
+          aria-expanded={isOpen}
+          aria-controls="dashboard-mobile-menu"
+        >
+          <span className="vg-burger-box" aria-hidden="true">
+            <span className="vg-burger-line vg-burger-line-1" />
+            <span className="vg-burger-line vg-burger-line-2" />
+            <span className="vg-burger-line vg-burger-line-3" />
+          </span>
+        </button>
+      </header>
+
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            <motion.div
+              className="vg-mobile-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.22 }}
+              onClick={() => setIsOpen(false)}
+              aria-hidden="true"
+            />
+            <motion.div
+              id="dashboard-mobile-menu"
+              className="vg-mobile-menu dashboard-mobile-menu"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Dashboard Navigation"
+              initial={{ opacity: 0, y: -10, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.98 }}
+              transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <div className="vg-mobile-menu-inner">
+                <div className="vg-mobile-kicker">
+                  <span>Navigation</span>
+                  <span className="vg-mobile-kicker-dot" />
+                </div>
+
+                <nav className="vg-mobile-nav" aria-label="Dashboard mobile links">
+                  {navLinks.map((link, idx) => (
+                    <motion.a
+                      key={link.href}
+                      href={link.href}
+                      className={`vg-mobile-link ${activePath === link.href ? 'nav-active-mobile' : ''}`}
+                      onClick={() => setIsOpen(false)}
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.03 * idx, duration: 0.2 }}
+                    >
+                      <span>{link.label}</span>
+                      {activePath === link.href && <span className="vg-active-dot" />}
+                    </motion.a>
+                  ))}
+                </nav>
+
+                <div className="vg-mobile-divider" />
+
+                <div className="vg-mobile-actions">
+                  <a
+                    className="vg-mobile-login-btn vg-mobile-signout"
+                    data-signout="true"
+                    href="/login"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Sign out
+                  </a>
+                </div>
+
+                <div className="vg-mobile-status">
+                  <span className="vg-status-radar">
+                    <i className="radar-dot" />
+                    <i className="radar-ring" />
+                  </span>
+                  <span className="vg-status-text">Protection Active</span>
+                  <span className="vg-status-ping">Online</span>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </>
+  );
 }
 
 function Logo() {
@@ -98,7 +247,7 @@ function Dashboard() {
 
   const hasCalls = overview.totalCalls > 0;
   return <main className="dashboard-shell">
-    <header className="dashboard-header"><DashboardLogo /><nav><a className="nav-active" href="/dashboard">Overview</a><a href="/analytics">Analytics</a><a href="/call-history">Call history</a><a href="/contacts">Contacts</a><a href="/settings">Settings</a><a data-signout="true" href="/login">Sign out</a></nav></header>
+    <DashboardHeader activePath="/dashboard" />
     <div className="dashboard-content">
       <div className="dashboard-heading"><div><p className="eyebrow">Overview</p><h1>Call security</h1><p>Monitor calls protected by VoiceGuard.</p></div><span className="status-pill"><i />Protection active</span></div>
       <section className="metric-row" aria-label="Call overview statistics"><div className="metric"><span>Total calls</span><strong>{overview.totalCalls}</strong><small>All protected calls</small></div><div className="metric"><span>Safe calls</span><strong>{overview.safeCalls}</strong><small>{hasCalls ? `${Math.round((overview.safeCalls / overview.totalCalls) * 100)}% of total` : 'No calls recorded'}</small></div><div className="metric"><span>Suspicious / high-risk</span><strong>{overview.suspiciousCalls}</strong><small>Needs review</small></div><div className="headline-metric"><div><span>Average risk score</span><small>Across all calls</small></div><RiskRing score={overview.averageRiskScore} /></div></section>
@@ -141,7 +290,7 @@ function Analytics() {
   if (!analytics) return <main className="dashboard-loading"><span className="spinner dark" />Loading analytics</main>;
   const selectedRange = analytics.ranges[range];
   return <main className="dashboard-shell">
-    <header className="dashboard-header"><DashboardLogo /><nav><a href="/dashboard">Overview</a><a className="nav-active" href="/analytics">Analytics</a><a href="/call-history">Call history</a><a href="/contacts">Contacts</a><a href="/settings">Settings</a><a data-signout="true" href="/login">Sign out</a></nav></header>
+    <DashboardHeader activePath="/analytics" />
     <div className="dashboard-content analytics-content">
       <div className="dashboard-heading"><div><p className="eyebrow">Patterns and signals</p><h1>Analytics</h1><p>Understand how VoiceGuard is identifying risk over time.</p></div></div>
       <section className="analytics-trend"><div className="analytics-section-heading"><div><p className="eyebrow">Risk movement</p><h2>Risk trend</h2></div><div className="range-tabs" role="group" aria-label="Risk trend time range">{['7d', '30d', '90d'].map((option) => <button key={option} className={range === option ? 'selected' : ''} type="button" onClick={() => setRange(option)}>{option}</button>)}</div></div><TrendChart points={selectedRange.points} startLabel={selectedRange.startLabel} /></section>
@@ -199,7 +348,7 @@ function CallHistory() {
   if (!calls) return <main className="dashboard-loading"><span className="spinner dark" />Loading call history</main>;
 
   return <main className="dashboard-shell">
-    <header className="dashboard-header"><DashboardLogo /><nav><a href="/dashboard">Overview</a><a href="/analytics">Analytics</a><a className="nav-active" href="/call-history">Call history</a><a href="/contacts">Contacts</a><a href="/settings">Settings</a><a data-signout="true" href="/login">Sign out</a></nav></header>
+    <DashboardHeader activePath="/call-history" />
     <div className="dashboard-content history-content">
       <div className="dashboard-heading"><div><p className="eyebrow">Protected calls</p><h1>Call history</h1><p>Review every call analyzed by VoiceGuard.</p></div></div>
       <section className="history-toolbar" aria-label="Call history filters"><label className="search-field"><span aria-hidden="true">⌕</span><input type="search" placeholder="Search number or name" value={search} onChange={updateFilter(setSearch)} /></label><label><span>Risk level</span><select value={risk} onChange={updateFilter(setRisk)}><option value="all">All levels</option><option value="safe">Safe</option><option value="suspicious">Suspicious</option><option value="high-risk">High risk</option></select></label><label><span>From</span><input type="date" value={fromDate} onChange={updateFilter(setFromDate)} /></label><label><span>To</span><input type="date" value={toDate} onChange={updateFilter(setToDate)} /></label><label><span>Sort by</span><select value={sort} onChange={updateFilter(setSort)}><option value="date">Newest first</option><option value="score">Highest risk</option></select></label></section>
@@ -231,7 +380,7 @@ function CallDetails({ id }) {
   if (!report) return <main className="dashboard-loading"><span className="spinner dark" />Loading call report</main>;
 
   return <main className="dashboard-shell">
-    <header className="dashboard-header"><DashboardLogo /><nav><a href="/dashboard">Overview</a><a href="/analytics">Analytics</a><a className="nav-active" href="/call-history">Call history</a><a href="/contacts">Contacts</a><a href="/settings">Settings</a><a data-signout="true" href="/login">Sign out</a></nav></header>
+    <DashboardHeader activePath="/call-history" />
     <div className="dashboard-content detail-content">
       <a className="back-link" href="/call-history">← Back to call history</a>
       <div className="detail-heading"><div><p className="eyebrow">Call report · {report.id}</p><h1>{report.name}</h1><p>{report.caller}</p></div><RiskBadge level={report.risk} /></div>
@@ -305,7 +454,7 @@ function Contacts() {
   if (!contacts) return <main className="dashboard-loading"><span className="spinner dark" />Loading contacts</main>;
 
   return <main className="dashboard-shell">
-    <header className="dashboard-header"><DashboardLogo /><nav><a href="/dashboard">Overview</a><a href="/analytics">Analytics</a><a href="/call-history">Call history</a><a className="nav-active" href="/contacts">Contacts</a><a href="/settings">Settings</a><a data-signout="true" href="/login">Sign out</a></nav></header>
+    <DashboardHeader activePath="/contacts" />
     <div className="dashboard-content contacts-content">
       <div className="dashboard-heading"><div><p className="eyebrow">Speaker verification</p><h1>Trusted contacts</h1><p>Known people can be matched during call analysis.</p></div><button className="add-contact-button" type="button" onClick={() => setShowForm((current) => !current)}>{showForm ? 'Close' : '+ Add contact'}</button></div>
       <section className="contact-explainer"><span className="explainer-mark">✓</span><div><strong>Why trusted contacts?</strong><p>VoiceGuard uses these contacts to verify familiar speakers and reduce false positives on calls from people you know.</p></div></section>
@@ -367,7 +516,7 @@ function Settings() {
   if (!profile) return <main className="dashboard-loading"><span className="spinner dark" />Loading settings</main>;
   const initials = profile.name.split(' ').map((part) => part[0]).join('').slice(0, 2);
   return <main className="dashboard-shell">
-    <header className="dashboard-header"><DashboardLogo /><nav><a href="/dashboard">Overview</a><a href="/analytics">Analytics</a><a href="/call-history">Call history</a><a href="/contacts">Contacts</a><a className="nav-active" href="/settings">Settings</a><a data-signout="true" href="/login">Sign out</a></nav></header>
+    <DashboardHeader activePath="/settings" />
     <div className="dashboard-content settings-content">
       <div className="dashboard-heading"><div><p className="eyebrow">Account controls</p><h1>Settings</h1><p>Manage your profile, security preferences, and account.</p></div></div>
       <form className="settings-section profile-section" onSubmit={saveProfile}><div className="settings-section-heading"><div><p className="eyebrow">Profile</p><h2>Your information</h2><p>Used to identify your account and contact you about protection.</p></div>{editing ? <button className="settings-button primary" type="submit">Save changes</button> : <button className="settings-button" type="button" onClick={() => setEditing(true)}>Edit profile</button>}</div><div className="profile-fields"><div className="avatar-placeholder" aria-label={`Avatar for ${profile.name}`}>{initials}</div><div className="settings-field"><label htmlFor="profile-name">Name</label><input id="profile-name" value={draft.name} onChange={(event) => updateDraft('name', event.target.value)} disabled={!editing} /></div><div className="settings-field"><label htmlFor="profile-email">Email</label><input id="profile-email" type="email" value={draft.email} onChange={(event) => updateDraft('email', event.target.value)} disabled={!editing} /></div><div className="settings-field"><label htmlFor="profile-phone">Phone number</label><input id="profile-phone" type="tel" value={draft.phone} onChange={(event) => updateDraft('phone', event.target.value)} disabled={!editing} /></div></div></form>
